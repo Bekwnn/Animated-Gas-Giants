@@ -21,13 +21,15 @@ void Application::AddWindow(Window* window)
 
 void Application::RemoveWindow(Window* window)
 {
-	for (auto w : windows)
+	auto iter = windows.begin();
+	while (iter != windows.end())
 	{
-		if (w.first.get() == window)
+		if (iter->first.get() == window)
 		{
-			w.second = true;
-			if (w.second) printf("flagging");
+			iter->second = true;
+			if (iter->second) printf("Closing window.\n");
 		}
+		++iter;
 	}
 }
 
@@ -52,6 +54,8 @@ void Application::RunApplication()
 			++iter;
 		}
 	}
+
+	printf("Closing Application.\n");
 
 	if (!windows.empty()) windows.clear();
 }
