@@ -22,6 +22,11 @@ void Window::Update()
 		return;
 	}
 
+	glfwMakeContextCurrent(glfwWindow);
+
+	glEnable(GL_DEPTH_TEST); // enable depth-testing
+	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
+
 	currentScene->InternalUpdate();
 
 	/* Swap front and back buffers */
@@ -31,7 +36,7 @@ void Window::Update()
 	glfwPollEvents();
 }
 
-Window * Window::CreateWindow(Application* app, int xres, int yres, std::string title, GLFWmonitor * monitor, GLFWwindow * share)
+Window* Window::MakeWindow(Application* app, int xres, int yres, std::string title, GLFWmonitor * monitor, GLFWwindow * share)
 {
 	/* Create a windowed mode window and its OpenGL context */
 	Window* w = new Window();
@@ -44,6 +49,13 @@ Window * Window::CreateWindow(Application* app, int xres, int yres, std::string 
 
 	/* Make the window's context current */
 	glfwMakeContextCurrent(w->glfwWindow);
+
+	if (glewInit() != GLEW_OK)
+	{
+		printf("GLEW failed to initialize. Closing...");
+		exit(EXIT_FAILURE);
+	}
+
 	return w;
 }
 

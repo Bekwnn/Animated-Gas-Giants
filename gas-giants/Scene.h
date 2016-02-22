@@ -1,4 +1,6 @@
 #pragma once
+#include <GL\glew.h>
+#include <GLFW\glfw3.h>
 #include "Time.h"
 
 class Scene {
@@ -27,4 +29,5 @@ protected:
 	float timeSinceLastFixedUpdate;
 	float timeFrozenAt;
 	bool sceneFrozen;
+	bool firstUpdateCall;
 };

@@ -1,16 +1,17 @@
 #include "Application.h"
+#include <GL\glew.h>
 #include <GLFW\glfw3.h>
-#include <algorithm>
 
 Application::Application()
 {
-	/* Initialize the library */
+	/* Initialize the glfw library */
 	if (!glfwInit())
 		return;
 }
 
 Application::~Application()
 {
+	/* terminate the glfw library */
 	glfwTerminate();
 }
 
