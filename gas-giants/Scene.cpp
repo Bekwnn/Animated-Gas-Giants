@@ -1,7 +1,6 @@
 #include "Scene.h"
 
 Scene::Scene() :
-	firstUpdateCall(true),
 	time(Time()),
 	sceneFrozen(false),
 	fixedUpdatesPerSecond(60),
@@ -15,12 +14,6 @@ Scene::~Scene()
 
 void Scene::InternalUpdate()
 {
-	if (firstUpdateCall)
-	{
-		RenderScene();
-		firstUpdateCall = false;
-	}
-
 	float getTime = (float)glfwGetTime();
 	time.deltaTime = getTime - time.totalTime;
 	time.totalTime = getTime;
@@ -39,6 +32,7 @@ void Scene::InternalUpdate()
 
 	//call variable rate update
 	Update();
+	RenderScene();
 }
 
 void Scene::Update()

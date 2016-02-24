@@ -24,9 +24,6 @@ void Window::Update()
 
 	glfwMakeContextCurrent(glfwWindow);
 
-	glEnable(GL_DEPTH_TEST); // enable depth-testing
-	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
-
 	currentScene->InternalUpdate();
 
 	/* Swap front and back buffers */

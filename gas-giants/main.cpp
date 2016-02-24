@@ -4,7 +4,7 @@
 int main(void)
 {
 	Application app;
-	Window* w = Window::MakeWindow(&app);
+	Window* w = Window::MakeWindow(&app, 640, 480, "Animated Gas Giants");
 	w->SetScene(new Flow2DScene);
 	app.AddWindow(w);
 	app.RunApplication();

@@ -22,9 +22,9 @@ public:
 	static Window* MakeWindow(Application* app, int xres = 640, int yres = 480, std::string title = "", GLFWmonitor* monitor = NULL, GLFWwindow* share = NULL);
 	void Destory();
 
+	GLFWwindow* glfwWindow;
 protected:
 	// Scenes exist outside a window so they can be moved, swapped, or temporarily removed
 	std::shared_ptr<Scene> currentScene;
-	GLFWwindow* glfwWindow;
 	Application* application;
 };
