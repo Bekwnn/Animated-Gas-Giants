@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene.h"
+#include "CurlNoise.h"
 
 class Flow2DScene : public Scene
 {
@@ -10,4 +11,5 @@ public:
 	void RenderScene() override;
 
 	GLuint shaderObject;
+	float restingWeatherTex[256][256][3];
 };

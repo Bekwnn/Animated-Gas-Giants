@@ -15,14 +15,14 @@ CurlNoise::CurlNoise(int perlinSquaresX, int perlinSquaresY)
 
 	srand(time(NULL));
 	
-	gradientVecs = new vec2*[perlinSquaresX];
-	for (int x = 0; x < perlinSquaresX; x++)
+	gradientVecs = new vec2*[perlinSquaresX+1];
+	for (int x = 0; x < perlinSquaresX+1; x++)
 	{
-		gradientVecs[x] = new vec2[perlinSquaresY];
-		for (int y = 0; y < perlinSquaresY; y++)
+		gradientVecs[x] = new vec2[perlinSquaresY+1];
+		for (int y = 0; y < perlinSquaresY+1; y++)
 		{
 			float angle = (rand() / (float)RAND_MAX) * 2 * 3.14159265359f;
-			gradientVecs[x][y] = glm::vec2(cosf(angle), sinf(angle)); //size is normalized
+			gradientVecs[x][y] = glm::normalize(glm::vec2(cosf(angle), sinf(angle))); //polar coords for even direction distribution
 		}
 	}
 }
@@ -54,10 +54,10 @@ glm::vec2 CurlNoise::GenerateCurlNoise(int x, int y, int perlinSquareSize)
 	//rotate by 90 deg to get curl
 	vec2 result = vec2(ylerp.y, -ylerp.x);
 
-	return result;
+	return glm::normalize(result);
 }
 
 glm::vec2 CurlNoise::Lerp(glm::vec2 a, glm::vec2 b, float t)
 {
-	return (1 - t)*a + t*b;
+	return (1.f - t)*a + t*b;
 }
