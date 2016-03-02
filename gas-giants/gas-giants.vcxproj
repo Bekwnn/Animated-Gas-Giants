@@ -156,6 +156,8 @@
   <ItemGroup>
     <None Include="BasicShader.frag" />
     <None Include="BasicShader.vert" />
+    <None Include="GasGiant.frag" />
+    <None Include="GasGiant.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

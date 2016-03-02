@@ -73,5 +73,11 @@
     <None Include="BasicShader.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="GasGiant.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="GasGiant.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -5,19 +5,62 @@
 
 Flow2DScene::Flow2DScene() : Scene()
 {
-	shaderObject = ShaderLoader::CompileShaders("BasicShader.vert", "BasicShader.frag");
-	CurlNoise curlNoise = CurlNoise();
-	for (int x = 0; x < 256; x++)
+	shaderObject = ShaderLoader::CompileShaders("GasGiant.vert", "GasGiant.frag");
+
+	CurlNoise curlNoise = CurlNoise(32, 32);
+	for (int x = 0; x < NOISE_SIZE; x++)
 	{
-		for (int y = 0; y < 256; y++)
+		for (int y = 0; y < NOISE_SIZE; y++)
 		{
-			glm::vec2 vec = curlNoise.GenerateCurlNoise(x, y);
-			restingWeatherTex[x][y][0] = (vec.x+1.f)/2.f;
-			restingWeatherTex[x][y][1] = (vec.y+1.f)/2.f;
-			restingWeatherTex[x][y][2] = 1.0f;
+			glm::vec2 vec = curlNoise.GenerateCurlNoise(x, y, 16);
+			weatherTex[x][y][0] = (vec.x + 1.f)/2.f;
+			weatherTex[x][y][1] = (vec.y + 1.f)/2.f;
+			weatherTex[x][y][2] = 0.f;
 		}
 	}
 
+	for (int x = 0; x < FLUID_SIZE; x++)
+	{
+		for (int y = 0; y < FLUID_SIZE; y++)
+		{
+			fluidDir[x][y][0] = 0.f;
+			fluidDir[x][y][1] = 0.f;
+			fluidDir[x][y][2] = curlNoise.PerlinNoise(x, y, 16);
+		}
+	}
+
+	// An array of 3 vectors which represents 3 vertices
+	std::vector<GLfloat> verts {
+		-1.f, -1.f,  0.f,
+		 1.f, -1.f,  0.f,
+		-1.f,  1.f,  0.f, //triangle 1
+		 1.f, -1.f,  0.f,
+		 1.f,  1.f,  0.f,
+		-1.f,  1.f,  0.f  //triangle 2
+	};
+	vertices = verts;
+
+	std::vector<GLfloat> uvs {
+		0.f, 0.f,
+		1.f, 0.f,
+		0.f, 1.f, //triangle 1
+		1.f, 0.f,
+		1.f, 1.f,
+		0.f, 1.f  //triangle 2
+	};
+	uvcoords = uvs;
+
+	std::vector<GLfloat> checkers {
+		1.f, 0.f, 0.f,   0.f, 1.f, 0.f,
+		0.f, 0.f, 1.f,   1.f, 1.f, 0.f
+	};
+	testTex = checkers;
+
+	glGenVertexArrays(1, &VertexArrayID);
+	glGenBuffers(1, &BufferID);
+	glGenBuffers(1, &UVcoordID);
+	glGenTextures(1, &TextureID1);
+	glGenTextures(1, &TextureID2);
 }
 
 void Flow2DScene::Update()
@@ -30,58 +73,31 @@ void Flow2DScene::RenderScene()
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	GLuint VertexArrayID;
-	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
 
-	// An array of 3 vectors which represents 3 vertices
-	static const GLfloat vertices[6][2] = {
-		{ -1.f, -1.f },
-		{  1.f, -1.f },
-		{ -1.f,  1.f }, //triangle 1
-		{  1.f, -1.f },
-		{  1.f,  1.f },
-		{ -1.f,  1.f }  //triangle 2
-	};
-
-	static const GLfloat uvcoords[6][2] = {
-		{ 0.f, 0.f },
-		{ 1.f, 0.f },
-		{ 0.f, 1.f }, //triangle 1
-		{ 1.f, 0.f },
-		{ 1.f, 1.f },
-		{ 0.f, 1.f }  //triangle 2
-	};
-
-	static const GLubyte testTex[] = {
-		0xFF0000FF,   0x00FF00FF,
-		0x0000FFFF,   0xFFFF00FF
-	};
-
-	GLuint BufferID;
-	glGenBuffers(1, &BufferID);
 	glBindBuffer(GL_ARRAY_BUFFER, BufferID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
+	glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(GLfloat), &vertices[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	GLuint UVcoordID;
-	glGenBuffers(1, &UVcoordID);
 	glBindBuffer(GL_ARRAY_BUFFER, UVcoordID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(uvcoords), uvcoords, GL_STATIC_DRAW);
-
+	glBufferData(GL_ARRAY_BUFFER, uvcoords.size()*sizeof(GLfloat), &uvcoords[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	glUseProgram(shaderObject);
 
-	GLuint TextureID;
-	glGenTextures(1, &TextureID);
-	glBindTexture(GL_TEXTURE_2D, TextureID);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexStorage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 2, 2);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 2, 2, GL_RGBA, GL_UNSIGNED_BYTE, testTex);
+	glUniform1i(glGetUniformLocation(shaderObject, "tex1"), 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, TextureID1);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, NOISE_SIZE, NOISE_SIZE);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, NOISE_SIZE, NOISE_SIZE, GL_RGB, GL_FLOAT, weatherTex);
+
+	glUniform1i(glGetUniformLocation(shaderObject, "tex2"), 1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, TextureID2);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, fluidDir);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
