@@ -5,7 +5,8 @@
 // new position. (Euler Backward Method)
 
 #version 430 core
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (local_size_x = 16, local_size_y = 16) in; // workgroup size
+//note: 1024 minimum maximum guaranteed by opengl. Test with 32x32
 
 layout (rg32f, binding = 0) uniform readonly image2D velocityField;
 layout (rgba32f, binding = 1) uniform readonly image2D inDyeTex;  //last frame's dye texture
@@ -14,29 +15,18 @@ layout (rgba32f, binding = 2) uniform writeonly image2D outDyeTex; //new advecte
 uniform float deltaTime;
 uniform float dissipation;
 
-void main(void)
-{
-	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
-	vec2 velocityVec = 2 * (imageLoad(velocityField, curCoord).rg - vec2(0.5,0.5));
-	vec2 oldCoord = curCoord - deltaTime * velocityVec; //TODO: floor, add 1 to grab corners, bilerp
-
-	vec4 newDyeTexel = dissipation * ivec2(oldCoord); //optional: use bilerp(oldCoord)
-
-	imageStore(outDyeTex, curCoord, newDyeTexel);
-}
-
-// TODO: BILERP -- samples four surrounding texels and performs bilinear interpolation
+// BILERP -- samples four surrounding texels and performs bilinear interpolation
 // A---------B
 // |         |    where x is a position between texels A,B,C,D
 // |  x      |  retval = lerp(lerp(A,B,xpos), lerp(C,D,xpos), ypos);
 // |         |
 // C---------D
-vec4 bilerp(vec2 coord)
+void bilerp(in vec2 coord, out vec4 retval)
 {
-	ivec2 botleft = ivec2(coord);
-	ivec2 botright = coord + ivec2(1,0);
-	ivec2 topleft = coord + ivec2(0,1);
-	ivec2 topright = coord + ivec2(1,1);
+	ivec2 botleft  = ivec2(coord);
+	ivec2 botright = botleft + ivec2(1,0);
+	ivec2 topleft  = botleft + ivec2(0,1);
+	ivec2 topright = botleft + ivec2(1,1);
 
 	vec2 subpixelCoord = coord - vec2(botleft);
 
@@ -44,5 +34,19 @@ vec4 bilerp(vec2 coord)
 	vec4 xlerptop = mix(imageLoad(inDyeTex, topleft), imageLoad(inDyeTex, topright), subpixelCoord.x);
 	vec4 ylerp = mix(xlerpbot, xlerptop, subpixelCoord.y);
 
-	return ylerp;
+	retval = ylerp;
+}
+
+void main(void)
+{
+	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
+	vec2 velocityVec = 2 * (imageLoad(velocityField, curCoord).rg - vec2(0.5,0.5));
+	vec2 oldCoord = curCoord - deltaTime * velocityVec; //grabs old coord from back in time
+
+	//set newDyeTexel to either bilerp(oldCoord) or imageLoad(inDyeTex, ivec2(oldCoord))
+	vec4 newDyeTexel;
+	bilerp(oldCoord, newDyeTexel);
+	newDyeTexel = newDyeTexel * dissipation;
+
+	imageStore(outDyeTex, curCoord, newDyeTexel);
 }

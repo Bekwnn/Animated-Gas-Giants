@@ -7,6 +7,8 @@ Flow2DScene::Flow2DScene() : Scene()
 {
 	vertFragShader = ShaderLoader::CompileVertFrag("GasGiant.vert", "GasGiant.frag");
 	advectShader = ShaderLoader::CompileCompute("Advect.comp");
+	jacobiShader = ShaderLoader::CompileCompute("JacobiDiffuse.comp");
+	divergenceShader = ShaderLoader::CompileCompute("Divergence.comp");
 
 	CurlNoise curlNoise = CurlNoise(32, 32);
 	for (int x = 0; x < NOISE_SIZE; x++)

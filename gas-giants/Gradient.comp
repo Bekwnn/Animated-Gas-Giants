@@ -1,3 +1,7 @@
+#version 430 core
+layout (local_size_x = 16, local_size_y = 16) in; // workgroup size
+//note: 1024 minimum maximum guaranteed by opengl. Test with 32x32
+
 uniform half halfScaleInv;    // 0.5 / gridscale
 uniform samplerRECT pressure;   // pressure
 uniform samplerRECT velocity;   // velocity

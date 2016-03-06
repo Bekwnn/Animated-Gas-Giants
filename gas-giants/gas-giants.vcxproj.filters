@@ -85,13 +85,13 @@
     <None Include="Boundary.comp">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="Diffuse.comp">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="Divergence.comp">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="Gradient.comp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="JacobiDiffuse.comp">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

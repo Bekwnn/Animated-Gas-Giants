@@ -1,14 +1,24 @@
-uniform sampler2D fluidVField; //vector field
+// DIVERGENCE STEP:
+//
 
-out vec3 div; //divergence
+#version 430 core
+layout (local_size_x = 16, local_size_y = 16) in; // workgroup size
+
+layout (rg32f, binding = 0) uniform readonly  image2D velField; //intermediate velocity field
+layout (rgba32f, binding = 1) uniform writeonly image2D outImage; //output - is fed into jacobi
 
 void main()
 {
-	vec3 vleft  = textureOffset(fluidVField, coords, vec2(-1, 0));
-	vec3 vright = textureOffset(fluidVField, coords, vec2( 1, 0));
-	vec3 vbelow = textureOffset(fluidVField, coords, vec2( 0,-1));
-	vec3 vabove = textureOffset(fluidVField, coords, vec2( 0, 1));
+	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
+
+	//get neighbor velocity vectors
+	vec2 vleft  = imageLoad(velField, curCoord - ivec2(1,0)).rg;
+	vec2 vright = imageLoad(velField, curCoord + ivec2(1,0)).rg;
+	vec2 vbelow = imageLoad(velField, curCoord - ivec2(0,1)).rg;
+	vec2 vabove = imageLoad(velField, curCoord + ivec2(0,1)).rg;
 
 	//using 0.5 for now, with grid scale it should be 0.5/scale
-	div = 0.5 * ((vright.x - vleft.x) + (vabove.y - vbelow.y));
+	vec4 div = vec4(0.5 * ((vright.x - vleft.x) + (vabove.y - vbelow.y)));
+
+	imageStore(outImage, curCoord, div);
 }

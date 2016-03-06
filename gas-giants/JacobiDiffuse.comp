@@ -1,24 +1,34 @@
+// DIFFUSION STEP:
+// Iteratively diffuses the liquid, causing viscous fluids to slow
+
+#version 430 core
+layout (local_size_x = 16, local_size_y = 16) in; // workgroup size
+
 //Ax = b
-uniform sampler2D x;
-uniform sampler2D b;
+layout (rgba32f, binding = 0) uniform readonly  image2D x; //pressure texture
+layout (rgba32f, binding = 1) uniform readonly  image2D b; //output of the divergence program
+layout (rgba32f, binding = 2) uniform writeonly image2D outImage;
 
 //porque?
 uniform float alpha;
 uniform float rBeta;
 
-out vec3 color;
-
-main()
+void main()
 {
+	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
+
 	//sample around target location using offset
-	vec3 xright = textureOffset(tex, coord, vec2( 1, 0));
-	vec3 xleft  = textureOffset(tex, coord, vec2(-1, 0));
-	vec3 xabove = textureOffset(tex, coord, vec2( 0, 1));
-	vec3 xbelow = textureOffset(tex, coord, vec2( 0,-1));
+	vec4 xleft  = imageLoad(x, curCoord - ivec2(1,0));
+	vec4 xright = imageLoad(x, curCoord + ivec2(1,0));
+	vec4 xbelow = imageLoad(x, curCoord - ivec2(0,1));
+	vec4 xabove = imageLoad(x, curCoord + ivec2(0,1));
 
 	//sample from center of b
-	vec3 bcenter = texture2D(b, coords);
+	vec4 bcenter = imageLoad(b, curCoord);
 
 	//evaluate jacobi iteration
-	outColor = (xleft + xright + xbelow + xabove + alpha * bcenter) * rBeta;
+	vec4 texel = (xleft + xright + xbelow + xabove + alpha * bcenter) * rBeta;
+
+	//store result
+	imageStore(outImage, curCoord, texel);
 }

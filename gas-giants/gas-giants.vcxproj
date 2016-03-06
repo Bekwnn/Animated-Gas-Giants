@@ -158,7 +158,7 @@
     <None Include="BasicShader.frag" />
     <None Include="BasicShader.vert" />
     <None Include="Boundary.comp" />
-    <None Include="Diffuse.comp" />
+    <None Include="JacobiDiffuse.comp" />
     <None Include="Divergence.comp" />
     <None Include="GasGiant.frag" />
     <None Include="GasGiant.vert" />
