@@ -5,7 +5,8 @@
 
 Flow2DScene::Flow2DScene() : Scene()
 {
-	shaderObject = ShaderLoader::CompileShaders("GasGiant.vert", "GasGiant.frag");
+	vertFragShader = ShaderLoader::CompileVertFrag("GasGiant.vert", "GasGiant.frag");
+	advectShader = ShaderLoader::CompileCompute("Advect.comp");
 
 	CurlNoise curlNoise = CurlNoise(32, 32);
 	for (int x = 0; x < NOISE_SIZE; x++)
@@ -85,15 +86,29 @@ void Flow2DScene::RenderScene()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	glUseProgram(shaderObject);
+	glUseProgram(vertFragShader);
 
-	glUniform1i(glGetUniformLocation(shaderObject, "tex1"), 0);
+	/*
+	// Perform the main fluid simulation steps: advect, diffuse, add forces
+	uTemp = advect(u);
+	swap(u, uTemp);
+	uTemp = diffuse(u);
+	swap(u, uTemp);
+	uTemp = addForces(u);
+	swap(u, uTemp);
+	// Now stabilize the result
+	p = computePressure(u);
+	uTemp = subtractPressureGradient(u, p);
+	swap(u, uTemp);
+	*/
+
+	glUniform1i(glGetUniformLocation(vertFragShader, "tex1"), 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, TextureID1);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, NOISE_SIZE, NOISE_SIZE);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, NOISE_SIZE, NOISE_SIZE, GL_RGB, GL_FLOAT, weatherTex);
 
-	glUniform1i(glGetUniformLocation(shaderObject, "tex2"), 1);
+	glUniform1i(glGetUniformLocation(vertFragShader, "tex2"), 1);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, TextureID2);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);

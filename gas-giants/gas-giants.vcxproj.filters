@@ -79,5 +79,20 @@
     <None Include="GasGiant.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="Advect.comp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Boundary.comp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Diffuse.comp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Divergence.comp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Gradient.comp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

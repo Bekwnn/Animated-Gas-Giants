@@ -15,7 +15,11 @@ public:
 	void Update() override;
 	void RenderScene() override;
 
-	GLuint shaderObject;
+	GLuint vertFragShader;
+	GLuint advectShader;
+	GLuint jacobiShader;
+	GLuint divergenceShader;
+
 	float weatherTex[NOISE_SIZE][NOISE_SIZE][3];
 	float fluidDir[FLUID_SIZE][FLUID_SIZE][3];
 

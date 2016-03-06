@@ -1,0 +1,16 @@
+uniform half halfScaleInv;    // 0.5 / gridscale
+uniform samplerRECT pressure;   // pressure
+uniform samplerRECT velocity;   // velocity
+
+out vec3 newVelocity;
+
+void main()
+{
+	half pL = h1texRECT(pressure, coords - vec2(1, 0));
+	half pR = h1texRECT(pressure, coords + vec2(1, 0));
+	half pB = h1texRECT(pressure, coords - vec2(0, 1));
+	half pT = h1texRECT(pressure, coords + vec2(0, 1));
+
+	uNew = h4texRECT(velocity, coords);
+	uNew.xy -= halfrdx * half2(pR - pL, pT - pB);
+}

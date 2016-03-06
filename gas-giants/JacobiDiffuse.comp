@@ -1,4 +1,12 @@
+//Ax = b
+uniform sampler2D x;
+uniform sampler2D b;
 
+//porque?
+uniform float alpha;
+uniform float rBeta;
+
+out vec3 color;
 
 main()
 {
@@ -8,7 +16,7 @@ main()
 	vec3 xabove = textureOffset(tex, coord, vec2( 0, 1));
 	vec3 xbelow = textureOffset(tex, coord, vec2( 0,-1));
 
-	//sample from center
+	//sample from center of b
 	vec3 bcenter = texture2D(b, coords);
 
 	//evaluate jacobi iteration

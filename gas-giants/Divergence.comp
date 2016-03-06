@@ -1,0 +1,14 @@
+uniform sampler2D fluidVField; //vector field
+
+out vec3 div; //divergence
+
+void main()
+{
+	vec3 vleft  = textureOffset(fluidVField, coords, vec2(-1, 0));
+	vec3 vright = textureOffset(fluidVField, coords, vec2( 1, 0));
+	vec3 vbelow = textureOffset(fluidVField, coords, vec2( 0,-1));
+	vec3 vabove = textureOffset(fluidVField, coords, vec2( 0, 1));
+
+	//using 0.5 for now, with grid scale it should be 0.5/scale
+	div = 0.5 * ((vright.x - vleft.x) + (vabove.y - vbelow.y));
+}

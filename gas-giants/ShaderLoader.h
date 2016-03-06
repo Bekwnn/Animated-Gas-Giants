@@ -6,6 +6,7 @@
 
 class ShaderLoader {
 public:
-	static GLuint CompileShaders(const char* vertFileName, const char* fragFileName);
+	static GLuint CompileVertFrag(const char* vertFileName, const char* fragFileName);
+	static GLuint CompileCompute(const char* compFileName);
 	static std::string ReadShader(const char* fileName);
 };

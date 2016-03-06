@@ -2,7 +2,7 @@
 
 #include <vector>
 
-GLuint ShaderLoader::CompileShaders(const char * vertFileName, const char * fragFileName)
+GLuint ShaderLoader::CompileVertFrag(const char * vertFileName, const char * fragFileName)
 {
 	GLint compileResult = GL_FALSE;
 	int logLength;
@@ -69,6 +69,53 @@ GLuint ShaderLoader::CompileShaders(const char * vertFileName, const char * frag
 	glDetachShader(shaderObject, fragShaderObject);
 	glDeleteShader(vertShaderObject);
 	glDeleteShader(fragShaderObject);
+
+	return shaderObject;
+}
+
+GLuint ShaderLoader::CompileCompute(const char * compFileName)
+{
+	GLint compileResult = GL_FALSE;
+	int logLength;
+	GLuint computeShaderObject;
+
+	//vertex shader: build, compile, link
+	std::cout << "Compiling compute shader..." << std::endl;
+	computeShaderObject = glCreateShader(GL_COMPUTE_SHADER);
+	std::string tempCompute = ShaderLoader::ReadShader(compFileName); //temp used to prevent deletion off stack
+	const GLchar* computeProgram = tempCompute.c_str();
+	glShaderSource(computeShaderObject, 1, &computeProgram, 0);
+	glCompileShader(computeShaderObject);
+
+	//vertex shader logging:
+	glGetShaderiv(computeShaderObject, GL_COMPILE_STATUS, &compileResult);
+	if (compileResult == GL_FALSE)
+	{
+		glGetShaderiv(computeShaderObject, GL_INFO_LOG_LENGTH, &logLength);
+		std::vector<GLchar> computeErrorLog(logLength);
+		glGetShaderInfoLog(computeShaderObject, logLength, &logLength, &computeErrorLog[0]);
+		std::cout << &computeErrorLog[0] << std::endl;
+	}
+	else std::cout << "Compute shader compiled successfully." << std::endl;
+
+	std::cout << "Linking shader program..." << std::endl;
+	GLuint shaderObject = glCreateProgram();
+	glAttachShader(shaderObject, computeShaderObject);
+	glLinkProgram(shaderObject);
+
+	glGetProgramiv(shaderObject, GL_LINK_STATUS, &compileResult);
+	if (compileResult == GL_FALSE)
+	{
+		glGetProgramiv(shaderObject, GL_INFO_LOG_LENGTH, &logLength);
+		std::vector<GLchar> programError(logLength);
+		glGetProgramInfoLog(shaderObject, logLength, &logLength, &programError[0]);
+		std::cout << &programError[0] << std::endl;
+	}
+	else std::cout << "Shader program linked successfully." << std::endl;
+
+	//clean up
+	glDetachShader(shaderObject, computeShaderObject);
+	glDeleteShader(computeShaderObject);
 
 	return shaderObject;
 }
