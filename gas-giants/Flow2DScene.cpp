@@ -114,22 +114,49 @@ void Flow2DScene::RenderScene()
 	glEnable(GL_DEPTH_TEST); // enable depth-testing
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	ComputeFluidImages();
+	
+	RenderMeshes();
 }
 
+//performs main fluid computation steps
 void Flow2DScene::ComputeFluidImages()
 {
-	//PERFORM MAIN FLUID SIMULATION COMPUTATION STEPS
+	//ADVECTION STEP:
 	glUseProgram(advectShader);
-	glBindImageTexture(2, weatherTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindImageTexture(0, weatherTex, 0, GL_FALSE, 0, GL_READ, GL_RGBA32F);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, weatherVelocityField);
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindImageTexture(1, pressureTex, 0, GL_FALSE, 0, GL_READ, GL_RGBA32F);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, PRESSURE_SIZE, PRESSURE_SIZE);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, PRESSURE_SIZE, PRESSURE_SIZE, GL_RGB, GL_FLOAT, pressureField);
+	
+	glActiveTexture(GL_TEXTURE2);
+	glBindImageTexture(2, weatherTex, 0, GL_FALSE, 0, GL_WRITE, GL_RGBA32F);
+	
+	//TODO: pass in fluidVelocityField to Advect shader, save to temp image, then swap when computation complete
+	
 	glUniform1f(glGetUniformLocation(advectShader, "deltaTime"), time.deltaTime);
 	glUniform1f(glGetUniformLocation(advectShader, "dissipation"), 0.2f);
 
 	glDispatchCompute(1, 128, 1);
-	//u = advect(u);
-	//u = diffuse(u);
-	// Now stabilize the result
-	//p = computePressure(u);
-	//u = subtractPressureGradient(u, p);
+	
+	//JACOBI ITERATION DIFFUSE STEP:
+	
+	//TODO
+	
+	//COMPUTE PRESSURE STEP:
+	
+	//TODO
+	
+	//SUBTRACT PRESSURE GRADIENT STEP:
+	
+	//TODO
 }
 
 void Flow2DScene::RenderMeshes()
