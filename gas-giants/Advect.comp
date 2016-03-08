@@ -5,7 +5,7 @@
 // new position. (Euler Backward Method)
 
 #version 430 core
-layout (local_size_x = 16, local_size_y = 16) in; // workgroup size
+layout (local_size_x = 128) in; // workgroup scanline size
 //note: 1024 minimum maximum guaranteed by opengl. Test with 32x32
 
 layout (rg32f, binding = 0) uniform readonly image2D velocityField;

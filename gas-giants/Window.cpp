@@ -21,7 +21,8 @@ void Window::Update()
 		Destory();
 		return;
 	}
-
+	//TODO: fix
+	//right now only the last window updates has proper rendering
 	glfwMakeContextCurrent(glfwWindow);
 
 	currentScene->InternalUpdate();

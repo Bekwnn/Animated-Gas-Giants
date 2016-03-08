@@ -2,19 +2,25 @@
 layout (local_size_x = 16, local_size_y = 16) in; // workgroup size
 //note: 1024 minimum maximum guaranteed by opengl. Test with 32x32
 
-uniform half halfScaleInv;    // 0.5 / gridscale
-uniform samplerRECT pressure;   // pressure
-uniform samplerRECT velocity;   // velocity
-
-out vec3 newVelocity;
+layout (rg32f, binding = 0) uniform readonly  image2D velocityField;
+layout (r32f, binding = 1)  uniform readonly  image2D pressureField;
+layout (rg32f, binding = 1) uniform writeonly image2D outVelocity;
 
 void main()
 {
-	half pL = h1texRECT(pressure, coords - vec2(1, 0));
-	half pR = h1texRECT(pressure, coords + vec2(1, 0));
-	half pB = h1texRECT(pressure, coords - vec2(0, 1));
-	half pT = h1texRECT(pressure, coords + vec2(0, 1));
+	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
 
-	uNew = h4texRECT(velocity, coords);
-	uNew.xy -= halfrdx * half2(pR - pL, pT - pB);
+	float pL = imageLoad(pressureField, curCoord - ivec2(1, 0)).r;
+	float pR = imageLoad(pressureField, curCoord + ivec2(1, 0)).r;
+	float pB = imageLoad(pressureField, curCoord - ivec2(0, 1)).r;
+	float pT = imageLoad(pressureField, curCoord + ivec2(0, 1)).r;
+
+	vec4 velocity = 2 * (imageLoad(velocityField, curCoord) - vec4(0.5,0.5,0,0));
+
+	//using 0.5 for now, with grid scale it should be 0.5/scale
+	velocity -= 0.5 * vec4(pR - pL, pT - pB, 0, 0);
+
+	velocity = velocity/2 + vec4(0.5,0.5,0,0);
+
+	imageStore(outVelocity, curCoord, velocity);
 }

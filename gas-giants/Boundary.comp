@@ -1,1 +1,11 @@
+// BOUNDARY STEP
+// Takes in a boundary texture and performs boundary adjustments
+// to the fluid simulation. In the case of gas giants, we only
+// want the top and bottom of the texture to have boundaries
+// while the sides wrap around
 
+#version 430 core
+layout (local_size_x = 16, local_size_y = 16) in; // workgroup size
+//note: 1024 minimum maximum guaranteed by opengl. Test with 32x32
+
+//TODO ?
