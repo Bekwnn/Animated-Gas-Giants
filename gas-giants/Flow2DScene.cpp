@@ -119,12 +119,14 @@ void Flow2DScene::RenderScene()
 void Flow2DScene::ComputeFluidImages()
 {
 	//PERFORM MAIN FLUID SIMULATION COMPUTATION STEPS
+	/*
 	glUseProgram(advectShader);
 	glBindImageTexture(2, weatherTex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 	glUniform1f(glGetUniformLocation(advectShader, "deltaTime"), time.deltaTime);
 	glUniform1f(glGetUniformLocation(advectShader, "dissipation"), 0.2f);
 
 	glDispatchCompute(1, 128, 1);
+	*/
 	//u = advect(u);
 	//u = diffuse(u);
 	// Now stabilize the result

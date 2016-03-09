@@ -1,0 +1,14 @@
+// BASIC SHADER FOR TESTING
+
+#version 430 core
+layout (local_size_x = 128) in; // workgroup scanline size
+//note: 1024 minimum maximum guaranteed by opengl.
+
+layout (rgba32f, binding = 0) uniform readonly image2D inImage;
+layout (rgba32f, binding = 1) uniform writeonly image2D outImage; 
+
+void main()
+{
+	vec4 inColor = imageLoad(inImage, gl_GlobalInvocationID.xy).abgr; //rotate color channels
+	imageStore(outImage, gl_GlobalInvocationID.xy, inColor);
+}
