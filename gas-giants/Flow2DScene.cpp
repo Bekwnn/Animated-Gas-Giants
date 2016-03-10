@@ -9,6 +9,7 @@ Flow2DScene::Flow2DScene() : Scene()
 	jacobiShader = ShaderLoader::CompileCompute("JacobiDiffuse.comp");
 	divergenceShader = ShaderLoader::CompileCompute("Divergence.comp");
 	gradientShader = ShaderLoader::CompileCompute("Gradient.comp");
+	testCompShader = ShaderLoader::CompileCompute("BasicShader.comp");
 
 	//WEATHER VELOCITY FIELD
 	// generates velocity field based on curl of perlin noise
@@ -42,7 +43,15 @@ Flow2DScene::Flow2DScene() : Scene()
 	{
 		for (int y = 0; y < PRESSURE_SIZE; y++)
 		{
-			pressureField[x][y][0] = 0.f;
+			if (y > PRESSURE_SIZE / 4 && y < (PRESSURE_SIZE / 4) * 3 &&
+				x > PRESSURE_SIZE / 4 && x < (PRESSURE_SIZE / 4) * 3)
+			{
+				pressureField[x][y][0] = 1.f;
+			}
+			else
+			{
+				pressureField[x][y][0] = 0.f;
+			}
 			pressureField[x][y][1] = 0.f;
 			pressureField[x][y][2] = 0.f;
 		}
@@ -56,11 +65,11 @@ Flow2DScene::Flow2DScene() : Scene()
 		for (int y = 0; y < DYE_SIZE; y++)
 		{
 			if (y > DYE_SIZE/4 && y < (DYE_SIZE/4)*3 && x > DYE_SIZE/4 && x < (DYE_SIZE/4)*3)
-				pressureField[x][y][0] = 1.f;
+				dyeField[x][y][0] = 1.f;
 			else
-				pressureField[x][y][0] = 0.f;
-			pressureField[x][y][1] = 0.f;
-			pressureField[x][y][2] = 0.f;
+				dyeField[x][y][0] = 0.f;
+			dyeField[x][y][1] = 0.f;
+			dyeField[x][y][2] = 0.f;
 		}
 	}
 
@@ -101,6 +110,11 @@ Flow2DScene::Flow2DScene() : Scene()
 	glGenTextures(1, &fluidVelocityTex);
 	glGenTextures(1, &pressureTex);
 	glGenTextures(1, &dyeTex);
+
+	printf("weatherTex: %d\n", weatherTex);
+	printf("fluidVelocityTex: %d\n", fluidVelocityTex);
+	printf("pressureTex: %d\n", pressureTex);
+	printf("dyeTex: %d\n", dyeTex);
 }
 
 void Flow2DScene::Update()
@@ -113,8 +127,24 @@ void Flow2DScene::RenderScene()
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	ComputeFluidImages();
-	
+	//ComputeFluidImages();
+
+	///*// TEST CODE THAT WORKS:
+	//input tex
+	//BLACK SCREENS IF NOT GIVEN WEATHER TEX -- TODO: FIND OUT WHY
+	glTextureStorage2D(weatherTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	glTextureSubImage2D(weatherTex, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, pressureField);
+	glBindImageTexture(0, weatherTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+
+	//output tex
+	glTextureStorage2D(dyeTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	glBindImageTexture(1, dyeTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+	glUseProgram(testCompShader);
+
+	glDispatchCompute(1, 128, 1);
+	//*/
+
 	RenderMeshes();
 }
 
@@ -122,25 +152,22 @@ void Flow2DScene::RenderScene()
 void Flow2DScene::ComputeFluidImages()
 {
 	//ADVECTION STEP:
+	
+	glTextureStorage2D(weatherTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	glTextureSubImage2D(weatherTex, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, weatherVelocityField);
+	glBindImageTexture(0, weatherTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+
+	glTextureStorage2D(pressureTex, 1, GL_RGBA8, PRESSURE_SIZE, PRESSURE_SIZE);
+	glTextureSubImage2D(pressureTex, 0, 0, 0, PRESSURE_SIZE, PRESSURE_SIZE, GL_RGB, GL_FLOAT, pressureField);
+	glBindImageTexture(1, pressureTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+
+	glTextureStorage2D(dyeTex, 1, GL_RGBA8, PRESSURE_SIZE, PRESSURE_SIZE);
+	glBindImageTexture(2, dyeTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	
 	glUseProgram(advectShader);
-	
-	glActiveTexture(GL_TEXTURE0);
-	glBindImageTexture(0, weatherTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, weatherVelocityField);
-	
-	glActiveTexture(GL_TEXTURE1);
-	glBindImageTexture(1, pressureTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, PRESSURE_SIZE, PRESSURE_SIZE);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, PRESSURE_SIZE, PRESSURE_SIZE, GL_RGB, GL_FLOAT, pressureField);
-	
-	glActiveTexture(GL_TEXTURE2);
-	glBindImageTexture(2, weatherTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	
-	//TODO: pass in fluidVelocityField to Advect shader, save to temp image, then swap when computation complete
-	
-	glUniform1f(glGetUniformLocation(advectShader, "deltaTime"), time.deltaTime);
-	glUniform1f(glGetUniformLocation(advectShader, "dissipation"), 0.2f);
+
+	//glUniform1f(0, time.deltaTime);
+	//glUniform1f(1, 0.7f);
 
 	glDispatchCompute(1, 128, 1);
 	
@@ -185,9 +212,7 @@ void Flow2DScene::RenderMeshes()
 	//bind and store texture 2
 	glUniform1i(glGetUniformLocation(vertFragShader, "tex2"), 1);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, fluidVelocityTex);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, fluidVelocityField);
+	glBindTexture(GL_TEXTURE_2D, dyeTex);
 
 	//draw full screen quad
 	glDrawArrays(GL_TRIANGLES, 0, 6);

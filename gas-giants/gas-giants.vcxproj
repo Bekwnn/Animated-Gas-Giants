@@ -155,6 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Advect.comp" />
+    <None Include="BasicShader.comp" />
     <None Include="BasicShader.frag" />
     <None Include="BasicShader.vert" />
     <None Include="Boundary.comp" />

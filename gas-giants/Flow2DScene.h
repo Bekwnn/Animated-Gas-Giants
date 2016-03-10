@@ -25,6 +25,7 @@ public:
 	GLuint jacobiShader;
 	GLuint divergenceShader;
 	GLuint gradientShader;
+	GLuint testCompShader; //delete later
 
 	float weatherVelocityField[NOISE_SIZE][NOISE_SIZE][3];
 	float fluidVelocityField[FLUID_SIZE][FLUID_SIZE][3];

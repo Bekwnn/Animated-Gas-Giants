@@ -94,5 +94,8 @@
     <None Include="JacobiDiffuse.comp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="BasicShader.comp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
