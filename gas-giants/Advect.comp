@@ -12,8 +12,8 @@ layout (rgba8, binding = 0) uniform image2D velocityField;
 layout (rgba8, binding = 1) uniform image2D inDyeTex;  //last frame's dye texture
 layout (rgba8, binding = 2) uniform image2D outDyeTex; //new advected dye texture
 
-//layout (location = 0) uniform float deltaTime;
-//layout (location = 1) uniform float dissipation;
+layout (location = 0) uniform float deltaTime;
+//layout (location = 1) uniform float dissipation; //dissipation is difficult with varying timestep
 
 // BILERP -- samples four surrounding texels and performs bilinear interpolation
 // A---------B
@@ -40,17 +40,16 @@ void bilerp(in vec2 coord, out vec4 retval)
 void main()
 {
 	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
-	imageStore(outDyeTex, curCoord, imageLoad(inDyeTex, curCoord));
 
-	//vec2 velocityVec = 2 * (imageLoad(velocityField, curCoord).rg - vec2(0.5,0.5));
-	//vec2 oldCoord = curCoord - deltaTime * velocityVec; //grabs old coord from back in time
-	//oldCoord = vec2(min(max(0,oldCoord.x),128), min(max(0,oldCoord.y),128)); //bound the old coord to the image
+	vec2 velocityVec = 2 * (imageLoad(velocityField, curCoord).rg - vec2(0.5,0.5));
+	vec2 oldCoord = curCoord - deltaTime * velocityVec; //grabs old coord from back in time
+	oldCoord = vec2(min(max(0,oldCoord.x),128), min(max(0,oldCoord.y),128)); //bound the old coord to the image
 
 	//set newDyeTexel to either bilerp(oldCoord) or imageLoad(inDyeTex, ivec2(oldCoord))
-	//vec4 newDyeTexel;
+	vec4 newDyeTexel;
 	//newDyeTexel = imageLoad(inDyeTex, ivec2(oldCoord));
-	//bilerp(oldCoord, newDyeTexel);
+	bilerp(oldCoord, newDyeTexel);
 	//newDyeTexel = newDyeTexel * dissipation;
 
-	//imageStore(outDyeTex, curCoord, newDyeTexel);
+	imageStore(outDyeTex, curCoord, newDyeTexel);
 }

@@ -25,8 +25,9 @@ public:
 	GLuint jacobiShader;
 	GLuint divergenceShader;
 	GLuint gradientShader;
-	GLuint testCompShader; //delete later
+	GLuint testCompShader; //for testing
 
+	//used to build initial texture values
 	float weatherVelocityField[NOISE_SIZE][NOISE_SIZE][3];
 	float fluidVelocityField[FLUID_SIZE][FLUID_SIZE][3];
 	float pressureField[PRESSURE_SIZE][PRESSURE_SIZE][3];
@@ -39,7 +40,8 @@ public:
 	GLuint weatherTex;
 	GLuint fluidVelocityTex;
 	GLuint pressureTex;
-	GLuint dyeTex;
+	GLuint oldDyeTex;
+	GLuint newDyeTex;
 
 	std::vector<GLfloat> vertices;
 	std::vector<GLfloat> uvcoords;

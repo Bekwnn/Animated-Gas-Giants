@@ -106,15 +106,33 @@ Flow2DScene::Flow2DScene() : Scene()
 	glGenBuffers(1, &BufferID);
 	glGenBuffers(1, &UVcoordID);
 
+	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, &weatherTex);
-	glGenTextures(1, &fluidVelocityTex);
-	glGenTextures(1, &pressureTex);
-	glGenTextures(1, &dyeTex);
+	glBindTexture(GL_TEXTURE_2D, weatherTex);
+	glTextureStorage2D(weatherTex, 1, GL_RGBA8, NOISE_SIZE, NOISE_SIZE);
+	glTextureSubImage2D(weatherTex, 0, 0, 0, NOISE_SIZE, NOISE_SIZE, GL_RGB, GL_FLOAT, weatherVelocityField);
 
-	printf("weatherTex: %d\n", weatherTex);
-	printf("fluidVelocityTex: %d\n", fluidVelocityTex);
-	printf("pressureTex: %d\n", pressureTex);
-	printf("dyeTex: %d\n", dyeTex);
+	glActiveTexture(GL_TEXTURE1);
+	glGenTextures(1, &fluidVelocityTex);
+	glBindTexture(GL_TEXTURE_2D, fluidVelocityTex);
+	glTextureStorage2D(oldDyeTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	glTextureSubImage2D(weatherTex, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, weatherVelocityField); //change to fluid velocity field later
+
+	glActiveTexture(GL_TEXTURE2);
+	glGenTextures(1, &pressureTex);
+	glBindTexture(GL_TEXTURE_2D, pressureTex);
+	glTextureStorage2D(oldDyeTex, 1, GL_RGBA8, PRESSURE_SIZE, PRESSURE_SIZE);
+
+	glActiveTexture(GL_TEXTURE3);
+	glGenTextures(1, &oldDyeTex);
+	glBindTexture(GL_TEXTURE_2D, oldDyeTex);
+	glTextureStorage2D(oldDyeTex, 1, GL_RGBA8, DYE_SIZE, DYE_SIZE);
+	glTextureSubImage2D(oldDyeTex, 0, 0, 0, DYE_SIZE, DYE_SIZE, GL_RGB, GL_FLOAT, dyeField);
+
+	glActiveTexture(GL_TEXTURE4);
+	glGenTextures(1, &newDyeTex);
+	glBindTexture(GL_TEXTURE_2D, newDyeTex);
+	glTextureStorage2D(newDyeTex, 1, GL_RGBA8, DYE_SIZE, DYE_SIZE);
 }
 
 void Flow2DScene::Update()
@@ -127,18 +145,18 @@ void Flow2DScene::RenderScene()
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	//ComputeFluidImages();
+	ComputeFluidImages();
 
-	///*// TEST CODE THAT WORKS:
+	/*// TEST CODE THAT WORKS:
 	//input tex
 	//BLACK SCREENS IF NOT GIVEN WEATHER TEX -- TODO: FIND OUT WHY
-	glTextureStorage2D(weatherTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
-	glTextureSubImage2D(weatherTex, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, pressureField);
-	glBindImageTexture(0, weatherTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+	glTextureStorage2D(pressureTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	glTextureSubImage2D(pressureTex, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, pressureField);
+	glBindImageTexture(0, pressureTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 
 	//output tex
-	glTextureStorage2D(dyeTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
-	glBindImageTexture(1, dyeTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glTextureStorage2D(newDyeTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	glBindImageTexture(1, newDyeTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 	glUseProgram(testCompShader);
 
@@ -153,21 +171,27 @@ void Flow2DScene::ComputeFluidImages()
 {
 	//ADVECTION STEP:
 	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, weatherTex);
 	glTextureStorage2D(weatherTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
-	glTextureSubImage2D(weatherTex, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, weatherVelocityField);
+	//glTextureSubImage2D(weatherTex, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, weatherVelocityField);
 	glBindImageTexture(0, weatherTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 
-	glTextureStorage2D(pressureTex, 1, GL_RGBA8, PRESSURE_SIZE, PRESSURE_SIZE);
-	glTextureSubImage2D(pressureTex, 0, 0, 0, PRESSURE_SIZE, PRESSURE_SIZE, GL_RGB, GL_FLOAT, pressureField);
-	glBindImageTexture(1, pressureTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, oldDyeTex);
+	glTextureStorage2D(oldDyeTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	//glTextureSubImage2D(oldDyeTex, 0, 0, 0, FLUID_SIZE, FLUID_SIZE, GL_RGB, GL_FLOAT, dyeField);
+	glBindImageTexture(1, oldDyeTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 
-	glTextureStorage2D(dyeTex, 1, GL_RGBA8, PRESSURE_SIZE, PRESSURE_SIZE);
-	glBindImageTexture(2, dyeTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, newDyeTex);
+	//glTextureStorage2D(newDyeTex, 1, GL_RGBA8, FLUID_SIZE, FLUID_SIZE);
+	glBindImageTexture(2, newDyeTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	
 	glUseProgram(advectShader);
 
-	//glUniform1f(0, time.deltaTime);
-	//glUniform1f(1, 0.7f);
+	glUniform1f(0, time.deltaTime);
+	//glUniform1f(1, 0.9f); //dissipation amount: difficult to have with varying time step due to exponential nature
 
 	glDispatchCompute(1, 128, 1);
 	
@@ -212,8 +236,13 @@ void Flow2DScene::RenderMeshes()
 	//bind and store texture 2
 	glUniform1i(glGetUniformLocation(vertFragShader, "tex2"), 1);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, dyeTex);
+	glBindTexture(GL_TEXTURE_2D, newDyeTex);
 
 	//draw full screen quad
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	//copy new dye tex over old dye tex
+	glCopyImageSubData(newDyeTex, GL_TEXTURE_2D, 0, 0, 0, 0,
+	                   oldDyeTex, GL_TEXTURE_2D, 0, 0, 0, 0,
+	                   FLUID_SIZE, FLUID_SIZE, 1);
 }
