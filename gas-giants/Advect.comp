@@ -13,7 +13,6 @@ layout (rgba8, binding = 1) uniform image2D inDyeTex;  //last frame's dye textur
 layout (rgba8, binding = 2) uniform image2D outDyeTex; //new advected dye texture
 
 layout (location = 0) uniform float deltaTime;
-//layout (location = 1) uniform float dissipation; //dissipation is difficult with varying timestep
 
 // BILERP -- samples four surrounding texels and performs bilinear interpolation
 // A---------B
@@ -23,10 +22,10 @@ layout (location = 0) uniform float deltaTime;
 // C---------D
 void bilerp(in vec2 coord, out vec4 retval)
 {
-	ivec2 botleft  = ivec2(coord);
-	ivec2 botright = botleft + ivec2(1,0);
-	ivec2 topleft  = botleft + ivec2(0,1);
-	ivec2 topright = botleft + ivec2(1,1);
+	ivec2 botleft  = ivec2(clamp(coord.x  , 0, 127), clamp(coord.y  , 0, 127));
+	ivec2 botright = ivec2(clamp(coord.x+1, 0, 127), clamp(coord.y  , 0, 127));
+	ivec2 topleft  = ivec2(clamp(coord.x  , 0, 127), clamp(coord.y+1, 0, 127));
+	ivec2 topright = ivec2(clamp(coord.x+1, 0, 127), clamp(coord.y+1, 0, 127));
 
 	vec2 subpixelCoord = coord - vec2(botleft);
 
@@ -42,12 +41,10 @@ void main()
 	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
 
 	vec2 velocityVec = 2 * (imageLoad(velocityField, curCoord).rg - vec2(0.5,0.5));
-	vec2 oldCoord = curCoord - deltaTime * velocityVec; //grabs old coord from back in time
-	oldCoord = vec2(min(max(0,oldCoord.x),128), min(max(0,oldCoord.y),128)); //bound the old coord to the image
+	vec2 oldCoord = curCoord - (deltaTime * velocityVec); //grabs old coord from back in time
 
 	//set newDyeTexel to either bilerp(oldCoord) or imageLoad(inDyeTex, ivec2(oldCoord))
 	vec4 newDyeTexel;
-	//newDyeTexel = imageLoad(inDyeTex, ivec2(oldCoord));
 	bilerp(oldCoord, newDyeTexel);
 	//newDyeTexel = newDyeTexel * dissipation;
 

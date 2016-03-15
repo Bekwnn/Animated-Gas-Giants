@@ -1,34 +1,39 @@
 // DIFFUSION STEP:
 // Iteratively diffuses the liquid, causing viscous fluids to slow
+// Solves for Ax = b, where A is the computations performed, x is
+// the pressure input, and b is the pressure as output. Needs to run
+// many iterations in order to achieve convincing result. (20 to 50)
 
 #version 430 core
-layout (local_size_x = 16, local_size_y = 16) in; // workgroup size
+layout (local_size_x = 128) in; // workgroup size
 
-//Ax = b
-layout (rgba32f, binding = 0) uniform readonly  image2D x; //pressure texture
-layout (rgba32f, binding = 1) uniform readonly  image2D b; //output of the divergence program
-layout (rgba32f, binding = 2) uniform writeonly image2D outImage;
+layout (rgba32f, binding = 0) uniform readonly  image2D xVecField; //x
+layout (rgba32f, binding = 1) uniform readonly  image2D bVecField; //b
+layout (rgba32f, binding = 2) uniform writeonly image2D result;
 
-//porque?
-uniform float alpha;
-uniform float rBeta;
+//alpha = (dx)^2/Vdt, where dx^2 = factor of grid size
+layout (location = 0) uniform float alpha;
+
+//reciprical of beta (1/beta), (beta = 4 + alpha)
+layout (location = 1) uniform float rBeta;
 
 void main()
 {
 	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
 
 	//sample around target location using offset
-	vec4 xleft  = imageLoad(x, curCoord - ivec2(1,0));
-	vec4 xright = imageLoad(x, curCoord + ivec2(1,0));
-	vec4 xbelow = imageLoad(x, curCoord - ivec2(0,1));
-	vec4 xabove = imageLoad(x, curCoord + ivec2(0,1));
+	vec4 xleft  = imageLoad(xVecField, clamp(curCoord, ivec2(0,0), ivec2(128,128)));
+	vec4 xright = imageLoad(xVecField, clamp(curCoord, ivec2(0,0), ivec2(128,128)));
+	vec4 xbelow = imageLoad(xVecField, clamp(curCoord, ivec2(0,0), ivec2(128,128)));
+	vec4 xabove = imageLoad(xVecField, clamp(curCoord, ivec2(0,0), ivec2(128,128)));
 
 	//sample from center of b
-	vec4 bcenter = imageLoad(b, curCoord);
+	vec4 bcenter = imageLoad(bVecField, curCoord);
 
 	//evaluate jacobi iteration
 	vec4 texel = (xleft + xright + xbelow + xabove + alpha * bcenter) * rBeta;
+	texel = clamp(texel, vec4(0,0,0,1), vec4(1,1,1,1));
 
 	//store result
-	imageStore(outImage, curCoord, texel);
+	imageStore(result, curCoord, texel);
 }

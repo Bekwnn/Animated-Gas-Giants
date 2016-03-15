@@ -97,5 +97,8 @@
     <None Include="BasicShader.comp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="AddForces.comp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

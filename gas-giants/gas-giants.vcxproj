@@ -154,6 +154,7 @@
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="AddForces.comp" />
     <None Include="Advect.comp" />
     <None Include="BasicShader.comp" />
     <None Include="BasicShader.frag" />
