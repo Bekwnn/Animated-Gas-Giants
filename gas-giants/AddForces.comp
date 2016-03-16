@@ -4,11 +4,12 @@
 // to the output.
 
 #version 430 core
-layout (local_size_x = 128) in; // workgroup size
+layout (local_size_x = 128) in; // workgroup scanline size
+//note: 1024 minimum maximum guaranteed by opengl. Test with 32x32
 
-layout (rgba32f, binding = 0) uniform readonly  image2D inVelField;
-layout (rgba32f, binding = 1) uniform readonly  image2D forcesField;
-layout (rgba32f, binding = 2) uniform writeonly image2D outVelField;
+layout (rgba8, binding = 0) uniform image2D inVelField;
+layout (rgba8, binding = 1) uniform image2D forcesField;
+layout (rgba8, binding = 2) uniform image2D outVelField;
 
 layout (location = 0) uniform float deltaTime;
 
@@ -16,10 +17,9 @@ void main()
 {
 	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
 
-	vec2 inVelocity = 2 * (imageLoad(inVelField, curCoord).rg - vec2(0.5,0.5));
+	vec2 inVelocity = 2 * (imageLoad(inVelField, curCoord).xy - vec2(0.5,0.5));
 	vec2 forceVec = deltaTime * 2 * (imageLoad(forcesField, curCoord).rg - vec2(0.5,0.5));
 	vec2 result = (0.5 * (inVelocity + forceVec)) + vec2(0.5,0.5);
-	result = clamp(result, vec2(0,0), vec2(1,1));
 
 	vec4 texel = vec4(result.x, result.y, 0.5, 1);
 
