@@ -4,10 +4,10 @@
 
 #include <vector>
 
-#define NOISE_SIZE 128
-#define FLUID_SIZE 128
-#define PRESSURE_SIZE 128
-#define DYE_SIZE 128
+#define NOISE_SIZE 512
+#define FLUID_SIZE 512
+#define PRESSURE_SIZE 512
+#define DYE_SIZE 512
 
 class Flow2DScene : public Scene
 {

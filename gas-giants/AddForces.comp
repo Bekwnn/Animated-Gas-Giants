@@ -4,7 +4,7 @@
 // to the output.
 
 #version 430 core
-layout (local_size_x = 128) in; // workgroup scanline size
+layout (local_size_x = 512) in; // workgroup scanline size
 //note: 1024 minimum maximum guaranteed by opengl. Test with 32x32
 
 layout (rgba8, binding = 0) uniform image2D inVelField;

@@ -5,7 +5,7 @@
 // new position. (Euler Backward Method)
 
 #version 430 core
-layout (local_size_x = 128) in; // workgroup scanline size
+layout (local_size_x = 512) in; // workgroup scanline size
 //note: 1024 minimum maximum guaranteed by opengl. Test with 32x32
 
 layout (rgba8, binding = 0) uniform image2D velocityField;
@@ -22,10 +22,10 @@ layout (location = 0) uniform float deltaTime;
 // C---------D
 void bilerp(in vec2 coord, out vec4 retval)
 {
-	ivec2 botleft  = ivec2(clamp(coord.x  , 0, 127), clamp(coord.y  , 0, 127));
-	ivec2 botright = ivec2(clamp(coord.x+1, 0, 127), clamp(coord.y  , 0, 127));
-	ivec2 topleft  = ivec2(clamp(coord.x  , 0, 127), clamp(coord.y+1, 0, 127));
-	ivec2 topright = ivec2(clamp(coord.x+1, 0, 127), clamp(coord.y+1, 0, 127));
+	ivec2 botleft  = ivec2(mod(coord.x  , 512), coord.y);
+	ivec2 botright = ivec2(mod(coord.x+1, 512), coord.y);
+	ivec2 topleft  = ivec2(mod(coord.x  , 512), clamp(coord.y+1, 0, 511));
+	ivec2 topright = ivec2(mod(coord.x+1, 512), clamp(coord.y+1, 0, 511));
 
 	vec2 subpixelCoord = coord - vec2(botleft);
 

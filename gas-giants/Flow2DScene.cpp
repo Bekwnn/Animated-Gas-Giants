@@ -23,7 +23,7 @@ Flow2DScene::Flow2DScene() : Scene()
 		{
 			glm::vec2 resultvec;
 			glm::vec2 noisevec = curlNoise.GenerateCurlNoise(x, y, 16);
-			float twolerpval = cosf(2.0f*3.1415f*(x / ((float)NOISE_SIZE - 1.0f))*2.0f);
+			float twolerpval = cosf(2.0f*3.1415f*(x / ((float)NOISE_SIZE - 1.0f))*4.0f);
 			if (twolerpval < 0.0f)
 				resultvec = glm::mix(leftband, noisevec, twolerpval + 1.0f);
 			else
@@ -54,8 +54,8 @@ Flow2DScene::Flow2DScene() : Scene()
 		for (int y = 0; y < PRESSURE_SIZE; y++)
 		{
 			pressureField[x][y][0] = 0.5f;
-			pressureField[x][y][1] = 0.5f;
-			pressureField[x][y][2] = 0.5f;
+			pressureField[x][y][1] = 0.f;
+			pressureField[x][y][2] = 0.f;
 		}
 	}
 
@@ -66,20 +66,21 @@ Flow2DScene::Flow2DScene() : Scene()
 	{
 		for (int y = 0; y < DYE_SIZE; y++)
 		{
-			if (x < (DYE_SIZE/4))
-				dyeField[x][y][0] = 1.f;
-			else if (x > (DYE_SIZE/4) * 2 && x < (DYE_SIZE/4) * 3)
-				dyeField[x][y][0] = 1.f;
-			else
-				dyeField[x][y][0] = 0.f;
-			if (x > (DYE_SIZE/4) && x < (DYE_SIZE / 4) * 2)
-				dyeField[x][y][1] = 1.f;
-			else if (x > (DYE_SIZE / 4) * 3)
-				dyeField[x][y][1] = 1.f;
-			else
-				dyeField[x][y][1] = 0.f;
-
-			dyeField[x][y][2] = 0.f;
+			//COLOR 1 (poles)
+			float coslerpval = cosf(2.0f*3.1415f*(x / ((float)NOISE_SIZE - 1.0f))*4.0f);
+			if (coslerpval > 0.f)
+			{
+				dyeField[x][y][0] = 0.1608f;
+				dyeField[x][y][1] = 0.6706f;
+				dyeField[x][y][2] = 0.5294f;
+			}
+			//COLOR 2
+			else if (coslerpval <= 0.f)
+			{
+				dyeField[x][y][0] = 0.3216f;
+				dyeField[x][y][1] = 0.8627f;
+				dyeField[x][y][2] = 0.3922f;
+			}
 		}
 	}
 
@@ -178,10 +179,10 @@ void Flow2DScene::ComputeFluidImages()
 	glBindImageTexture(1, dyeTex,           0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 	glBindImageTexture(2, tempTransferTex,  0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-	glUniform1f(0, 5.0f*time.deltaTime);
+	glUniform1f(0, time.deltaTime);
 
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-	glDispatchCompute(1, 128, 1);
+	glDispatchCompute(1, 512, 1);
 
 	//copy new dye tex over old dye tex
 	glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
@@ -195,10 +196,10 @@ void Flow2DScene::ComputeFluidImages()
 	glBindImageTexture(1, fluidVelocityTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 	glBindImageTexture(2, tempTransferTex,  0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-	glUniform1f(0, 5.0f*time.deltaTime);
+	glUniform1f(0, time.deltaTime);
 
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-	glDispatchCompute(1, 128, 1);
+	glDispatchCompute(1, 512, 1);
 
 	glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
 	glCopyImageSubData(tempTransferTex, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -206,7 +207,6 @@ void Flow2DScene::ComputeFluidImages()
 	                   FLUID_SIZE, FLUID_SIZE, 1);
 	
 	//DIFFUSE STEP:
-	///*
 	glUseProgram(jacobiShader);
 
 	//diffuse velocity field using jacobi iteration
@@ -217,22 +217,18 @@ void Flow2DScene::ComputeFluidImages()
 		glBindImageTexture(1, fluidVelocityTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 		glBindImageTexture(2, tempTransferTex,  0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-		float alpha = (1.0f / FLUID_SIZE) / time.deltaTime;
+		float alpha = (1.0f / (FLUID_SIZE*0.3f)) / time.deltaTime;
 		glUniform1f(0, alpha);
 		glUniform1f(1, 1.0f/(4.0f + alpha));
 
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		glDispatchCompute(1, 128, 1);
+		glDispatchCompute(1, 512, 1);
 
 		glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
 		glCopyImageSubData(tempTransferTex, GL_TEXTURE_2D, 0, 0, 0, 0,
 						   fluidVelocityTex, GL_TEXTURE_2D, 0, 0, 0, 0,
 						   FLUID_SIZE, FLUID_SIZE, 1);
 	}
-	//*/
-	//diffuse pressure field
-
-	//TODO
 
 	//ADD FORCES STEP:
 
@@ -243,10 +239,10 @@ void Flow2DScene::ComputeFluidImages()
 	glBindImageTexture(1, weatherTex,       0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 	glBindImageTexture(2, tempTransferTex,  0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-	glUniform1f(0, 20.0f*time.deltaTime);
+	glUniform1f(0, time.deltaTime);
 
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-	glDispatchCompute(1, 128, 1);
+	glDispatchCompute(1, 512, 1);
 
 	glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
 	glCopyImageSubData(tempTransferTex, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -255,11 +251,24 @@ void Flow2DScene::ComputeFluidImages()
 	//*/
 	//COMPUTE PRESSURE STEP:
 	
-	//TODO
+	glUseProgram(divergenceShader);
+
+	glBindImageTexture(0, fluidVelocityTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+	glBindImageTexture(1, tempTransferTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	glDispatchCompute(1, 512, 1);
+
+	glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
+	glCopyImageSubData(tempTransferTex, GL_TEXTURE_2D, 0, 0, 0, 0,
+	                   pressureTex, GL_TEXTURE_2D, 0, 0, 0, 0,
+	                   FLUID_SIZE, FLUID_SIZE, 1);
 	 
 	//SUBTRACT PRESSURE GRADIENT STEP:
 	
 	//TODO
+
+	//TODO move dye advection to last step for system stability
 }
 
 void Flow2DScene::RenderMeshes()
@@ -281,10 +290,10 @@ void Flow2DScene::RenderMeshes()
 	glUseProgram(vertFragShader);
 
 	//load texture 1 from GL_TEXTURE0+i
-	glUniform1i(glGetUniformLocation(vertFragShader, "tex1"), 0);
+	glUniform1i(glGetUniformLocation(vertFragShader, "tex1"), 1);
 
 	//load texture 2 from GL_TEXTURE0+i
-	glUniform1i(glGetUniformLocation(vertFragShader, "tex2"), 3);
+	glUniform1i(glGetUniformLocation(vertFragShader, "tex2"), 2);
 
 	//draw full screen quad
 	glDrawArrays(GL_TRIANGLES, 0, 6);
