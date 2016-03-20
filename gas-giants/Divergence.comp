@@ -12,10 +12,10 @@ void main()
 	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
 
 	//get neighbor velocity vectors
-	vec2 vleft  = imageLoad(inVelField, ivec2(mod(curCoord.x - 1, 512), curCoord.y               )).rg;
-	vec2 vright = imageLoad(inVelField, ivec2(mod(curCoord.x + 1, 512), curCoord.y               )).rg;
-	vec2 vbelow = imageLoad(inVelField, ivec2(curCoord.x              , max(curCoord.y - 1, 0  ) )).rg;
-	vec2 vabove = imageLoad(inVelField, ivec2(curCoord.x              , min(curCoord.y + 1, 511) )).rg;
+	vec2 vleft  = imageLoad(inVelField, ivec2(mod(curCoord.x+512 - 1, 512), curCoord.y               )).rg;
+	vec2 vright = imageLoad(inVelField, ivec2(mod(curCoord.x     + 1, 512), curCoord.y               )).rg;
+	vec2 vbelow = imageLoad(inVelField, ivec2(curCoord.x                  , max(curCoord.y - 1, 0  ) )).rg;
+	vec2 vabove = imageLoad(inVelField, ivec2(curCoord.x                  , min(curCoord.y + 1, 511) )).rg;
 	
 	vleft  = 2 * (vleft  - vec2(0.5,0.5));
 	vright = 2 * (vright - vec2(0.5,0.5));

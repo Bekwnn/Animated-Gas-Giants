@@ -22,10 +22,10 @@ void main()
 	ivec2 curCoord = ivec2(gl_GlobalInvocationID.xy);
 
 	//sample around target location using offset
-	vec4 xleft  = imageLoad(xVecField, ivec2(mod(curCoord.x - 1, 512), curCoord.y));
-	vec4 xright = imageLoad(xVecField, ivec2(mod(curCoord.x + 1, 512), curCoord.y));
-	vec4 xbelow = imageLoad(xVecField, ivec2(curCoord.x, clamp(curCoord.y - ivec2(0,1), 0, 511)));
-	vec4 xabove = imageLoad(xVecField, ivec2(curCoord.x, clamp(curCoord.y + ivec2(0,1), 0, 511)));
+	vec4 xleft  = imageLoad(xVecField, ivec2(mod(curCoord.x+512 - 1, 512), curCoord.y               ));
+	vec4 xright = imageLoad(xVecField, ivec2(mod(curCoord.x     + 1, 512), curCoord.y               ));
+	vec4 xbelow = imageLoad(xVecField, ivec2(curCoord.x                  , max(curCoord.y - 1, 0  ) ));
+	vec4 xabove = imageLoad(xVecField, ivec2(curCoord.x                  , min(curCoord.y + 1, 511) ));
 
 	//sample from center of b
 	vec4 bcenter = imageLoad(bVecField, curCoord);

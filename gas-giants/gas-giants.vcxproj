@@ -138,6 +138,7 @@
     <ClCompile Include="CurlNoise.cpp" />
     <ClCompile Include="Flow2DScene.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RandomColorGrad.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneObject.cpp" />
     <ClCompile Include="ShaderLoader.cpp" />
@@ -147,6 +148,7 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="CurlNoise.h" />
     <ClInclude Include="Flow2DScene.h" />
+    <ClInclude Include="RandomColorGrad.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneObject.h" />
     <ClInclude Include="ShaderLoader.h" />

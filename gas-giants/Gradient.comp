@@ -1,10 +1,10 @@
 #version 430 core
-layout (local_size_x = 16, local_size_y = 16) in; // workgroup size
+layout (local_size_x = 512) in; // workgroup size
 //note: 1024 minimum maximum guaranteed by opengl. Test with 32x32
 
-layout (rg32f, binding = 0) uniform readonly  image2D velocityField;
-layout (r32f, binding = 1)  uniform readonly  image2D pressureField;
-layout (rg32f, binding = 1) uniform writeonly image2D outVelocity;
+layout (rgba8, binding = 0) uniform image2D velocityField;
+layout (rgba8, binding = 1) uniform image2D pressureField;
+layout (rgba8, binding = 2) uniform image2D outVelocity;
 
 void main()
 {
@@ -15,12 +15,12 @@ void main()
 	float pB = imageLoad(pressureField, curCoord - ivec2(0, 1)).r;
 	float pT = imageLoad(pressureField, curCoord + ivec2(0, 1)).r;
 
-	vec4 velocity = 2 * (imageLoad(velocityField, curCoord) - vec4(0.5,0.5,0,0));
+	vec2 velocity = 2 * (imageLoad(velocityField, curCoord).rg - vec2(0.5,0.5));
 
 	//using 0.5 for now, with grid scale it should be 0.5/scale
-	velocity -= 0.5 * vec4(pR - pL, pT - pB, 0, 0);
+	velocity -= 0.5 * vec2(pR - pL, pT - pB);
 
-	velocity = velocity/2 + vec4(0.5,0.5,0,0);
+	velocity = 0.5 * velocity + vec2(0.5,0.5);
 
-	imageStore(outVelocity, curCoord, velocity);
+	imageStore(outVelocity, curCoord, vec4(velocity.x, velocity.g, 0.5, 1));
 }
