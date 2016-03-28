@@ -26,7 +26,7 @@ Flow2DScene::Flow2DScene() : Scene()
 			glm::vec2 noisevec = curlNoise.GenerateCurlNoise(x, y, 16);
 			float twolerpval = cosf(2.0f*3.1415f*(x / ((float)NOISE_SIZE - 1.0f))*4.0f);
 			if (twolerpval < 0.0f)
-				resultvec = glm::mix(leftband, noisevec, twolerpval/2.f + 1.0f);
+				resultvec = glm::mix(rightband, noisevec, twolerpval/2.f + 1.0f);
 			else
 				resultvec = glm::mix(noisevec, rightband, twolerpval/2.f);
 
@@ -65,13 +65,15 @@ Flow2DScene::Flow2DScene() : Scene()
 	// initialize to whatever pattern the planet should have
 
 	//create random height bands near a desired color
-	RandomColorGrad band1(0.1608f, 0.6706f, 0.5294f);
-	RandomColorGrad band2(0.3216f, 0.8627f, 0.3922f);
+	RandomColorGrad band1(128, 0, 0);
+	RandomColorGrad band2(102, 2, 60);
+	float band1dist = 0.05f;
+	float band2dist = 0.02f;
 
-	glm::vec3 curband1 = band1.GetColorNear(0.1f);
+	glm::vec3 curband1 = band1.GetColorNear(band1dist);
 	int curBandRun1 = (rand() % 20) + 1; //height 1-8 pixel bands
 
-	glm::vec3 curband2 = band2.GetColorNear(0.1f);
+	glm::vec3 curband2 = band2.GetColorNear(band2dist);
 	int curBandRun2 = (rand() % 20) + 1;
 
 	for (int x = 0; x < DYE_SIZE; x++)
@@ -100,12 +102,12 @@ Flow2DScene::Flow2DScene() : Scene()
 
 		if (curBandRun1 <= 0)
 		{
-			curband1 = band1.GetColorNear(0.1f);
+			curband1 = band1.GetColorNear(band1dist);
 			curBandRun1 = (rand() % 20) + 1; //height 1-8 pixel bands
 		}
 		if (curBandRun2 <= 0)
 		{
-			curband2 = band2.GetColorNear(0.1f);
+			curband2 = band2.GetColorNear(band2dist);
 			curBandRun2 = (rand() % 20) + 1;
 		}
 	}
@@ -168,6 +170,11 @@ Flow2DScene::Flow2DScene() : Scene()
 	glTextureSubImage2D(dyeTex, 0, 0, 0, DYE_SIZE, DYE_SIZE, GL_RGB, GL_FLOAT, dyeField);
 
 	glActiveTexture(GL_TEXTURE4);
+	glGenTextures(1, &divergenceTex);
+	glBindTexture(GL_TEXTURE_2D, divergenceTex);
+	glTextureStorage2D(divergenceTex, 1, GL_RGBA8, DYE_SIZE, DYE_SIZE);
+
+	glActiveTexture(GL_TEXTURE5);
 	glGenTextures(1, &tempTransferTex);
 	glBindTexture(GL_TEXTURE_2D, tempTransferTex);
 	glTextureStorage2D(tempTransferTex, 1, GL_RGBA8, DYE_SIZE, DYE_SIZE);
@@ -182,6 +189,8 @@ void Flow2DScene::RenderScene()
 	glEnable(GL_DEPTH_TEST); // enable depth-testing
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	time.deltaTime = time.deltaTime * 10.0;
 	
 	ComputeFluidImages();
 
@@ -191,7 +200,7 @@ void Flow2DScene::RenderScene()
 //performs main fluid computation steps
 void Flow2DScene::ComputeFluidImages()
 {
-	//TODO: reorder steps -> advect should probably be last honestly.
+	float deltaX = 0.2f; //distance between pixels
 
 	//ADVECTION STEP:
 	glUseProgram(advectShader);
@@ -230,14 +239,14 @@ void Flow2DScene::ComputeFluidImages()
 	//VISCOUS DIFFUSE STEP:
 	glUseProgram(jacobiShader);
 
-	for (int i = 0; i < 50; i++)
+	for (int i = 0; i < 30; i++)
 	{
 		glBindImageTexture(0, fluidVelocityTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 		glBindImageTexture(1, fluidVelocityTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 		glBindImageTexture(2, tempTransferTex,  0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-		float viscocity = 0.3f;
-		float alpha = (1.0f / (FLUID_SIZE*FLUID_SIZE)) / (viscocity*time.deltaTime);
+		float viscocity = 0.5f;
+		float alpha = (deltaX*deltaX) / (viscocity*time.deltaTime);
 		glUniform1f(0, alpha);
 		glUniform1f(1, 1.0f/(4.0f + alpha)); //reciprocal of beta
 
@@ -257,7 +266,7 @@ void Flow2DScene::ComputeFluidImages()
 	glBindImageTexture(1, weatherTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 	glBindImageTexture(2, tempTransferTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-	glUniform1f(0, 200.0f*time.deltaTime);
+	glUniform1f(0, time.deltaTime);
 
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	glDispatchCompute(1, 512, 1);
@@ -282,19 +291,20 @@ void Flow2DScene::ComputeFluidImages()
 	                   divergenceTex, GL_TEXTURE_2D, 0, 0, 0, 0,
 	                   FLUID_SIZE, FLUID_SIZE, 1);
 
+	
 	//POISSON-PRESSURE EQUATION STEP:
-	///*
 	glUseProgram(jacobiShader);
 
-	//TODO: zero out pressure tex (before loop); we use that as initial guess
-
-	for (int i = 0; i < 80; i++)
+	//zero out pressure tex; we use that as initial guess then iterate
+	glTextureSubImage2D(pressureTex, 0, 0, 0, PRESSURE_SIZE, PRESSURE_SIZE, GL_RGB, GL_FLOAT, pressureField);
+	
+	for (int i = 0; i < 40; i++)
 	{
 		glBindImageTexture(0, pressureTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 		glBindImageTexture(1, divergenceTex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
 		glBindImageTexture(2, tempTransferTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-		float alpha = -(1.0f / (FLUID_SIZE*FLUID_SIZE));
+		float alpha = -(deltaX*deltaX);
 		glUniform1f(0, alpha);
 		glUniform1f(1, 1.0f/4.0f);
 
@@ -303,11 +313,10 @@ void Flow2DScene::ComputeFluidImages()
 
 		glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
 		glCopyImageSubData(tempTransferTex, GL_TEXTURE_2D, 0, 0, 0, 0,
-		                   pressureTex, GL_TEXTURE_2D, 0, 0, 0, 0,
+		                   pressureTex, GL_TEXTURE_2D, 0, 0, 0, 0, //pressure tex invis, check shaders and this step
 		                   FLUID_SIZE, FLUID_SIZE, 1);
 	}
-	//*/
-	 
+	
 	//SUBTRACT PRESSURE GRADIENT STEP:
 	glUseProgram(gradientShader);
 
@@ -320,10 +329,8 @@ void Flow2DScene::ComputeFluidImages()
 
 	glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
 	glCopyImageSubData(tempTransferTex, GL_TEXTURE_2D, 0, 0, 0, 0,
-		fluidVelocityTex, GL_TEXTURE_2D, 0, 0, 0, 0,
-		FLUID_SIZE, FLUID_SIZE, 1);
-
-	//TODO move dye advection to last step for system stability
+	                   fluidVelocityTex, GL_TEXTURE_2D, 0, 0, 0, 0,
+	                   FLUID_SIZE, FLUID_SIZE, 1);
 }
 
 void Flow2DScene::RenderMeshes()

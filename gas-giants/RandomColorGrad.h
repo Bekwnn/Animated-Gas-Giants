@@ -7,7 +7,7 @@ public:
 	glm::vec3 color;
 
 	RandomColorGrad();
-	RandomColorGrad(float r, float g, float b);
+	RandomColorGrad(int r, int g, int b);
 
 	glm::vec3 GetColorNear(float dist);
 };

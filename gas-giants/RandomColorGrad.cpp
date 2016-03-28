@@ -1,20 +1,21 @@
 #include "RandomColorGrad.h"
 #include <iostream>
+#include <random>
 
 RandomColorGrad::RandomColorGrad()
 {
 	color = glm::vec3(0.5, 0.5, 0.5);
 }
 
-RandomColorGrad::RandomColorGrad(float r, float g, float b)
+RandomColorGrad::RandomColorGrad(int r, int g, int b)
 {
-	color = glm::vec3(fmaxf(0.0f, fminf(1.0f, r)), fmaxf(0.0f, fminf(1.0f, g)), fmaxf(0.0f, fminf(1.0f, b)));
+	color = glm::vec3(r / 255.f, g / 255.f, b / 255.f);
 }
 
 glm::vec3 RandomColorGrad::GetColorNear(float dist)
 {
-	float rdiff = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / dist)) - 0.5f * dist;
-	float gdiff = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / dist)) - 0.5f * dist;
-	float bdiff = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / dist)) - 0.5f * dist;
-	return glm::vec3(fmaxf(0.0f, fminf(color.r + rdiff, 1.0f)), fmaxf(0.0f, fminf(color.g + gdiff, 1.0f)), fmaxf(0.0f, fminf(color.b + bdiff, 1.0f)));
+	std::random_device rd;
+	std::mt19937 e2(rd());
+	std::uniform_real_distribution<float> rdiff(-dist, dist);
+	return glm::vec3(fmaxf(0.0f, fminf(color.r + rdiff(e2), 1.0f)), fmaxf(0.0f, fminf(color.g + rdiff(e2), 1.0f)), fmaxf(0.0f, fminf(color.b + rdiff(e2), 1.0f)));
 }

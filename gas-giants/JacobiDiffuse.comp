@@ -1,4 +1,4 @@
-// DIFFUSION STEP:
+// DIFFUSION AND PROJECTION STEPS:
 // Iteratively diffuses the liquid, causing viscous fluids to slow
 // Solves for Ax = b, where A is the computations performed, x is
 // the pressure input, and b is the pressure as output. Needs to run
@@ -11,10 +11,9 @@ layout (rgba8, binding = 0) uniform image2D xVecField; //x
 layout (rgba8, binding = 1) uniform image2D bVecField; //b
 layout (rgba8, binding = 2) uniform image2D result;
 
-//alpha = (dx)^2/Vdt, where dx^2 = factor of grid size
 layout (location = 0) uniform float alpha;
 
-//reciprical of beta (1/beta), (beta = 4 + alpha)
+//reciprical of beta
 layout (location = 1) uniform float rBeta;
 
 void main()

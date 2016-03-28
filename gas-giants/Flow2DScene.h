@@ -42,6 +42,7 @@ public:
 	GLuint fluidVelocityTex;
 	GLuint pressureTex;
 	GLuint dyeTex;
+	GLuint divergenceTex;
 	GLuint tempTransferTex;
 
 	std::vector<GLfloat> vertices;
